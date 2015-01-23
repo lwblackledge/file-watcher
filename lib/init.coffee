@@ -1,5 +1,4 @@
-_ = require 'lodash'
-FileWatcherView = require './file-watcher-view'
+FileWatcher = require './file-watcher'
 {CompositeDisposable} = require 'atom'
 
 class FileWatcherInitializer
@@ -13,21 +12,21 @@ class FileWatcherInitializer
       default: false
 
   activate: ->
-    @fileWatcherViews = []
+    @fileWatchers = []
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.workspace.observeTextEditors (editor) =>
-      return if editor.fileWatcherView?
+      return if editor.fileWatcher?
 
-      fileWatcherView = new FileWatcherView(editor)
-      @fileWatcherViews.push fileWatcherView
-      @subscriptions.add fileWatcherView.onDidDestroy =>
-        i = @fileWatcherViews.indexOf fileWatcherView
+      fileWatcher = new FileWatcher(editor)
+      @fileWatchers.push fileWatcher
+      @subscriptions.add fileWatcher.onDidDestroy =>
+        i = @fileWatchers.indexOf fileWatcher
         if i > 0
-          @fileWatcherViews.splice i, 1
+          @fileWatchers.splice i, 1
 
   deactivate: ->
     @subscriptions.dispose()
-    fileWatcherView.destroy() for fileWatcherView in @fileWatcherViews
+    fileWatcher.destroy() for fileWatcher in @fileWatchers
 
 module.exports = new FileWatcherInitializer()

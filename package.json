@@ -16,5 +16,6 @@
     "url": "https://github.com/lblackledge/file-watcher/issues"
   },
   "dependencies": {
+    "atom-space-pen-views": "^2.0.3"
   }
 }

@@ -1,25 +1,19 @@
 path = require 'path'
-{$, $$, View} = require 'atom-space-pen-views'
 {CompositeDisposable, Emitter} = require 'atom'
 {log, warn} = require './utils'
 
 module.exports =
-class FileWatcherView extends View
+class FileWatcher
 
   hasConflict: false
 
-  @content: ->
-    @div class: 'file-watcher', =>
-      @div outlet: 'fileChangedLabel', class: 'message', 'The file has changed on disk.'
-      @div class: 'options', =>
-        @button outlet: 'okButton', class: 'btn btn-warning', 'Reload'
-        @button outlet: 'cancelButton', class: 'btn btn-default', 'Ignore'
-
-  initialize: (@editor) ->
+  constructor: (@editor) ->
     @emitter = new Emitter
     @subscriptions = new CompositeDisposable
     unless @editor?
       warn "No editor instance on this editor"
+
+    @fileWatcherView = new FileWatcherView(@editor, @hasConflict)
 
     @handleEvents()
     @handleEditorEvents()
@@ -28,10 +22,7 @@ class FileWatcherView extends View
   handleEditorEvents: ->
     @subscriptions.add @editor.onDidConflict =>
       @hasConflict = true
-      log "File has conflict"
-      log "show prompt: " + @showPrompt
-      log "show active: " + @showActiveOnly
-      @showReloadPrompt() if @showPrompt
+      @showReloadPrompt() if @showPrompt && !@showActiveOnly
 
     @subscriptions.add @editor.onDidSave =>
       @hasConflict = false
@@ -40,10 +31,7 @@ class FileWatcherView extends View
       @destroy()
 
     @subscriptions.add atom.workspace.observeActivePaneItem =>
-      log "selected editor: " + @editor.id
       if @editor.id is atom.workspace.getActiveTextEditor()?.id && @hasConflict
-        log "File on disk has changed: " + @editor.getPath()
-        log "show prompt: " + @showPrompt
         @showReloadPrompt() if @showPrompt
 
   handleConfigChanges: ->
@@ -54,21 +42,8 @@ class FileWatcherView extends View
       (promptForActiveFilesOnly) => @showActiveOnly = promptForActiveFilesOnly
 
   showReloadPrompt: ->
-    fileName = path.basename @editor.getPath()
-    log fileName
-
-    @fileChangedLabel.text(fileName + ' has changed on disk.')
-
-    log @content
-
-    # modalOptions = {
-    #   item: fileName + ' has changed on disk.'
-    #   visible: true
-    # }
-
-    #@modal = atom.workspace.addModalPanel(modalOptions)
-
-    #log @modal
+    @reloadPanel = atom.workspace.addModalPanel(item: @fileWatcherView, visible: true)
+    @fileWatcherView.setPanel(@reloadPanel)
 
   handleEvents: ->
     @okButton.on 'click', '.ok', =>
