@@ -1,65 +1,45 @@
-path = require 'path'
-{CompositeDisposable, Emitter} = require 'atom'
+{CompositeDisposable} = require 'atom'
 {log, warn} = require './utils'
+FileWatcherView = require './file-watcher-view'
 
-module.exports =
 class FileWatcher
 
-  hasConflict: false
+  config:
+    promptWhenFileHasChangedOnDisk:
+      type: 'boolean'
+      default: true
 
-  constructor: (@editor) ->
-    @emitter = new Emitter
+  activate: ->
     @subscriptions = new CompositeDisposable
-    unless @editor?
-      warn "No editor instance on this editor"
 
-    @fileWatcherView = new FileWatcherView(@editor, @hasConflict)
-
-    @handleEvents()
-    @handleEditorEvents()
-    @handleConfigChanges()
-
-  handleEditorEvents: ->
-    @subscriptions.add @editor.onDidConflict =>
-      @hasConflict = true
-      @showReloadPrompt() if @showPrompt && !@showActiveOnly
-
-    @subscriptions.add @editor.onDidSave =>
-      @hasConflict = false
-
-    @subscriptions.add @editor.onDidDestroy =>
-      @destroy()
-
-    @subscriptions.add atom.workspace.observeActivePaneItem =>
-      if @editor.id is atom.workspace.getActiveTextEditor()?.id && @hasConflict
-        @showReloadPrompt() if @showPrompt
-
-  handleConfigChanges: ->
     @subscriptions.add atom.config.observe 'file-watcher.promptWhenFileHasChangedOnDisk',
       (promptWhenFileHasChangedOnDisk) => @showPrompt = promptWhenFileHasChangedOnDisk
 
-    @subscriptions.add atom.config.observe 'file-watcher.promptForActiveFilesOnly',
-      (promptForActiveFilesOnly) => @showActiveOnly = promptForActiveFilesOnly
+    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
+      editor.onDidConflict =>
+        log 'Conflict: ' + editor.getPath()
+        @createView editor
+        @listen()
+        @conflictPanel.show() if @showPrompt && editor.getBuffer().isInConflict()
 
-  showReloadPrompt: ->
-    @reloadPanel = atom.workspace.addModalPanel(item: @fileWatcherView, visible: true)
-    @fileWatcherView.setPanel(@reloadPanel)
+      editor.onDidSave =>
+        @conflictPanel?.hide()
 
-  handleEvents: ->
-    @okButton.on 'click', '.ok', =>
-      @hasConflict = false
-      @editor.getBuffer.reload()
-      @modal.dispose()
+  createView: (editor) ->
+    @fileWatcherView = new FileWatcherView(editor)
+    @conflictPanel = atom.workspace.addModalPanel(item: @fileWatcherView, visible: false)
 
-    @cancelButton.on 'click', '.cancel', =>
-      @hasConflict = false
-      @modal.dispose()
+  listen: ->
+    @fileWatcherView.onDidConfirm (editor) =>
+      editor.getBuffer()?.reload()
+      @conflictPanel.hide()
 
-  destroy: ->
-    @modal?.dispose()
-    @content?.dispose()
+    @fileWatcherView.onDidCancel =>
+      @conflictPanel.hide()
+
+  deactivate: ->
+    @fileWatcherView?.dispose()
+    @conflictPanel?.dispose()
     @subscriptions.dispose()
-    @emitter.emit 'did-destroy'
 
-  onDidDestroy: (callback) ->
-    @emitter.on 'did-destroy', callback
+module.exports = new FileWatcher()

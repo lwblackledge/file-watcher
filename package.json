@@ -1,6 +1,6 @@
 {
   "name": "file-watcher",
-  "main": "./lib/init",
+  "main": "./lib/file-watcher",
   "version": "0.0.1",
   "description": "Notifications when an open file has changed on disk and Atom has pending changes.",
   "repository": {
