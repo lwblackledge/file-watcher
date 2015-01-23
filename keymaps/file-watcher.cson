@@ -1,0 +1,3 @@
+# https://atom.io/docs/latest/advanced/keymaps
+'atom-workspace':
+  'ctrl-alt-c': 'file-watcher:toggleChangeNotifications'
