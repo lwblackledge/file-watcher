@@ -29,7 +29,6 @@ describe "FileWatcher", ->
         expect(isFileWatcherPanel(panel)).toBe false
 
   it 'shows modal when there is a conflict', ->
-    console.log editor
     editor.moveToEndOfLine()
     editor.insertText('test')
     fs.appendFileSync(@testFile, 'other text')
@@ -44,4 +43,16 @@ describe "FileWatcher", ->
     fs.writeFile(@testFile, initialFileContents)
 
   it 'reloads file when ok button is clicked', ->
-    expect('pending').toBe 'pending'
+    editor.moveToEndOfLine()
+    editor.insertText('test')
+    fs.appendFileSync(@testFile, 'other text')
+
+    hasFileWatcherModal = false
+
+    for panel in atom.workspace.getModalPanels
+      do (panel) ->
+        if (isFileWatcherPanel(panel))
+          
+          hasFileWatcherModal = true
+
+    fs.writeFile(@testFile, initialFileContents)'
