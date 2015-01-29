@@ -1,29 +1,32 @@
-{CompositeDisposable} = require 'atom'
+{CompositeDisposable, Emitter} = require 'atom'
 {log, warn} = require './utils'
 FileWatcherView = require './file-watcher-view'
 
+module.exports =
 class FileWatcher
 
-  config:
-    promptWhenFileHasChangedOnDisk:
-      type: 'boolean'
-      default: true
-
-  activate: ->
+  constructor: (@editor) ->
     @subscriptions = new CompositeDisposable
+    @emitter = new Emitter
+
+    unless @editor?
+      warn 'No editor instance on this editor'
+      return
 
     @subscriptions.add atom.config.observe 'file-watcher.promptWhenFileHasChangedOnDisk',
       (promptWhenFileHasChangedOnDisk) => @showPrompt = promptWhenFileHasChangedOnDisk
 
-    @subscriptions.add atom.workspace.observeTextEditors (editor) =>
-      editor.onDidConflict =>
-        log 'Conflict: ' + editor.getPath()
-        @createView editor
-        @listen()
-        @conflictPanel.show() if @showPrompt && editor.getBuffer().isInConflict()
+    @subscriptions.add editor.onDidSave =>
+      @conflictPanel?.hide()
 
-      editor.onDidSave =>
-        @conflictPanel?.hide()
+    @subscriptions.add editor.onDidDestroy =>
+      @destroy()
+
+    @subscriptions.add editor.onDidConflict =>
+      log 'Conflict: ' + editor.getPath()
+      @createView editor
+      @listen()
+      @conflictPanel.show() if @showPrompt && editor.getBuffer().isInConflict()
 
   createView: (editor) ->
     @fileWatcherView = new FileWatcherView(editor)
@@ -37,9 +40,11 @@ class FileWatcher
     @fileWatcherView.onDidCancel =>
       @conflictPanel.hide()
 
-  deactivate: ->
+  destroy: ->
     @fileWatcherView?.dispose()
     @conflictPanel?.dispose()
     @subscriptions.dispose()
+    @emitter.emit 'did-destroy'
 
-module.exports = new FileWatcher()
+  onDidDestroy: (callback) ->
+    @emitter.on 'did-destroy', callback

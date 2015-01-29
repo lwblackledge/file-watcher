@@ -41,6 +41,7 @@ describe "FileWatcher", ->
           hasFileWatcherModal = true
 
     fs.writeFile(@testFile, initialFileContents)
+    expect(hasFileWatcherModal).toBe true
 
   it 'reloads file when ok button is clicked', ->
     editor.moveToEndOfLine()
@@ -52,7 +53,7 @@ describe "FileWatcher", ->
     for panel in atom.workspace.getModalPanels
       do (panel) ->
         if (isFileWatcherPanel(panel))
-          
-          hasFileWatcherModal = true
+          panel.item.okButton.click()
+          expect(editor.getText()).toBe(initialFileContents + 'other text')
 
-    fs.writeFile(@testFile, initialFileContents)'
+    fs.writeFile(@testFile, initialFileContents)
