@@ -1,4 +1,11 @@
-# file-watcher package
+# Atom file-watcher Package
 
-Watch for files with conflicts and display an option to reload the file from disk.
-Displays a prompt for each open file.
+This package watches open files for conflicts, then uses the Atom confirm feature to prompt to reload each file.
+
+## Installation
+Either use `apm`:
+```
+  apm install file-watcher
+```
+
+Or find the package in the Atom registry and install.

@@ -18,6 +18,7 @@ class FileWatcherInitializer
       return if editor.fileWatcher?
 
       fileWatcher = new FileWatcher(editor)
+      editor.fileWatcher = fileWatcher
       @watchers.push(fileWatcher)
 
       @subscriptions.add fileWatcher.onDidDestroy =>

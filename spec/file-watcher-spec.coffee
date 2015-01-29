@@ -1,13 +1,9 @@
 fs = require 'fs'
 path = require 'path'
 FileWatcher = require '../lib/file-watcher'
-FileWatcherView = require '../lib/file-watcher-view'
 
 describe "FileWatcher", ->
   [editor, initialFileContents] = []
-
-  isFileWatcherPanel = (panel) ->
-    return panel.item instanceOf FileWatcherView
 
   beforeEach ->
     atom.project.setPaths __dirname
@@ -24,36 +20,26 @@ describe "FileWatcher", ->
       editor = atom.workspace.getActiveTextEditor()
 
   it 'does nothing when there is no conflict', ->
-    for panel in atom.workspace.getModalPanels
-      do (panel) ->
-        expect(isFileWatcherPanel(panel)).toBe false
+    expect(editor.fileWatcher).toBeTruthy()
+    expect(editor.fileWatcher.shouldPromptToReload()).toBeFalsy()
 
-  it 'shows modal when there is a conflict', ->
+  it 'should prompt when there is a conflict', ->
     editor.moveToEndOfLine()
     editor.insertText('test')
     fs.appendFileSync(@testFile, 'other text')
 
-    hasFileWatcherModal = false
-
-    for panel in atom.workspace.getModalPanels
-      do (panel) ->
-        if (isFileWatcherPanel(panel))
-          hasFileWatcherModal = true
+    expect(editor.fileWatcher).toBeTruthy()
+    expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
 
     fs.writeFile(@testFile, initialFileContents)
-    expect(hasFileWatcherModal).toBe true
 
-  it 'reloads file when ok button is clicked', ->
+  it 'should not prompt when there is a conflict and the user has disabled prompts', ->
+    
     editor.moveToEndOfLine()
     editor.insertText('test')
     fs.appendFileSync(@testFile, 'other text')
 
-    hasFileWatcherModal = false
-
-    for panel in atom.workspace.getModalPanels
-      do (panel) ->
-        if (isFileWatcherPanel(panel))
-          panel.item.okButton.click()
-          expect(editor.getText()).toBe(initialFileContents + 'other text')
+    expect(editor.fileWatcher).toBeTruthy()
+    expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
 
     fs.writeFile(@testFile, initialFileContents)

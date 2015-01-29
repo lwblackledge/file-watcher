@@ -1,6 +1,6 @@
+path = require 'path'
 {CompositeDisposable, Emitter} = require 'atom'
 {log, warn} = require './utils'
-FileWatcherView = require './file-watcher-view'
 
 module.exports =
 class FileWatcher
@@ -16,33 +16,26 @@ class FileWatcher
     @subscriptions.add atom.config.observe 'file-watcher.promptWhenFileHasChangedOnDisk',
       (promptWhenFileHasChangedOnDisk) => @showPrompt = promptWhenFileHasChangedOnDisk
 
-    @subscriptions.add editor.onDidSave =>
-      @conflictPanel?.hide()
-
-    @subscriptions.add editor.onDidDestroy =>
+    @subscriptions.add @editor.onDidDestroy =>
       @destroy()
 
-    @subscriptions.add editor.onDidConflict =>
-      log 'Conflict: ' + editor.getPath()
-      @createView editor
-      @listen()
-      @conflictPanel.show() if @showPrompt && editor.getBuffer().isInConflict()
+    @subscriptions.add @editor.onDidConflict =>
+      log 'Conflict: ' + @editor.getPath()
+      @confirmReload if @shouldPromptToReload
 
-  createView: (editor) ->
-    @fileWatcherView = new FileWatcherView(editor)
-    @conflictPanel = atom.workspace.addModalPanel(item: @fileWatcherView, visible: false)
+  shouldPromptToReload: ->
+    return @showPrompt and @editor.getBuffer().isInConflict()
 
-  listen: ->
-    @fileWatcherView.onDidConfirm (editor) =>
-      editor.getBuffer()?.reload()
-      @conflictPanel.hide()
+  confirmReload: ->
+    choice = atom.confirm
+      message: path.basename(@editor.getPath()) + ' has changed on disk.'
+      buttons: ['Reload', 'Ignore']
 
-    @fileWatcherView.onDidCancel =>
-      @conflictPanel.hide()
+    return if choice is 1
+
+    @editor.getBuffer()?.reload()
 
   destroy: ->
-    @fileWatcherView?.dispose()
-    @conflictPanel?.dispose()
     @subscriptions.dispose()
     @emitter.emit 'did-destroy'
 
