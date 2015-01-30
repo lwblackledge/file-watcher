@@ -3,58 +3,62 @@ path = require 'path'
 FileWatcher = require '../lib/file-watcher'
 
 describe "FileWatcher", ->
-  [editor, initialFileContents] = []
+  [editor, initialFileContents, testFile] = []
 
   beforeEach ->
-    atom.project.setPaths __dirname
-    @testFile = path.join(__dirname, 'testFile.md')
-    initialFileContents = fs.readFileSync(@testFile)
+    testFile = path.join(__dirname, 'testFile.md')
+    initialFileContents = fs.readFileSync(testFile)
 
     waitsForPromise ->
       atom.packages.activatePackage('file-watcher')
 
     waitsForPromise ->
-      atom.workspace.open @testFile
-
-    runs ->
-      editor = atom.workspace.getActiveTextEditor()
+      atom.workspace.open(path.join(__dirname, 'testFile.md'))
 
   it 'does nothing when there is no conflict', ->
+    editor = atom.workspace.getActiveTextEditor()
+    expect(editor.getPath()).toContain 'testFile.md'
     expect(editor.fileWatcher).toBeTruthy()
     expect(editor.fileWatcher.shouldPromptToReload()).toBeFalsy()
 
   it 'should prompt when there is a conflict', ->
+    editor = atom.workspace.getActiveTextEditor()
     editor.buffer.conflict = true
     expect(editor.fileWatcher).toBeTruthy()
     expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
 
   it 'should not prompt when there is a conflict and the user has disabled prompts', ->
+    editor = atom.workspace.getActiveTextEditor()
     editor.buffer.conflict = true
     expect(editor.fileWatcher).toBeTruthy()
     expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
 
   it 'should reload if the user selects reload', ->
+    editor = atom.workspace.getActiveTextEditor()
+
     spyOn(atom, 'confirm').andReturn(0)
     spyOn(editor.buffer, 'reload')
 
     editor.moveToEndOfLine()
     editor.insertText('test')
-    fs.appendFileSync(@testFile, 'more text')
+    fs.appendFileSync(testFile, 'more text')
 
     expect(editor.fileWatcher).toBeTruthy()
     expect(editor.buffer.reload).toHaveBeenCalled()
 
-    fs.writeFile(@testFile, initialFileContents)
+    fs.writeFile(testFile, initialFileContents)
 
   it 'should not reload if the user selects ignore', ->
+    editor = atom.workspace.getActiveTextEditor()
+
     spyOn(atom, 'confirm').andReturn(1)
     spyOn(editor.buffer, 'reload')
 
     editor.moveToEndOfLine()
     editor.insertText('test')
-    fs.appendFileSync(@testFile, 'more text')
+    fs.appendFileSync(testFile, 'more text')
 
     expect(editor.fileWatcher).toBeTruthy()
     expect(editor.buffer.reload).not.toHaveBeenCalled()
 
-    fs.writeFile(@testFile, initialFileContents)
+    fs.writeFile(testFile, initialFileContents)
