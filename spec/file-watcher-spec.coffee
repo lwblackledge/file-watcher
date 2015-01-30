@@ -11,10 +11,10 @@ describe "FileWatcher", ->
     initialFileContents = fs.readFileSync(@testFile)
 
     waitsForPromise ->
-      atom.workspace.open 'testFile.md'
+      atom.packages.activatePackage('file-watcher')
 
     waitsForPromise ->
-      atom.packages.activatePackage('file-watcher')
+      atom.workspace.open @testFile
 
     runs ->
       editor = atom.workspace.getActiveTextEditor()
@@ -24,22 +24,37 @@ describe "FileWatcher", ->
     expect(editor.fileWatcher.shouldPromptToReload()).toBeFalsy()
 
   it 'should prompt when there is a conflict', ->
-    editor.moveToEndOfLine()
-    editor.insertText('test')
-    fs.appendFileSync(@testFile, 'other text')
-
+    editor.buffer.conflict = true
     expect(editor.fileWatcher).toBeTruthy()
     expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
+
+  it 'should not prompt when there is a conflict and the user has disabled prompts', ->
+    editor.buffer.conflict = true
+    expect(editor.fileWatcher).toBeTruthy()
+    expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
+
+  it 'should reload if the user selects reload', ->
+    spyOn(atom, 'confirm').andReturn(0)
+    spyOn(editor.buffer, 'reload')
+
+    editor.moveToEndOfLine()
+    editor.insertText('test')
+    fs.appendFileSync(@testFile, 'more text')
+
+    expect(editor.fileWatcher).toBeTruthy()
+    expect(editor.buffer.reload).toHaveBeenCalled()
 
     fs.writeFile(@testFile, initialFileContents)
 
-  it 'should not prompt when there is a conflict and the user has disabled prompts', ->
-    
+  it 'should not reload if the user selects ignore', ->
+    spyOn(atom, 'confirm').andReturn(1)
+    spyOn(editor.buffer, 'reload')
+
     editor.moveToEndOfLine()
     editor.insertText('test')
-    fs.appendFileSync(@testFile, 'other text')
+    fs.appendFileSync(@testFile, 'more text')
 
     expect(editor.fileWatcher).toBeTruthy()
-    expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
+    expect(editor.buffer.reload).not.toHaveBeenCalled()
 
     fs.writeFile(@testFile, initialFileContents)

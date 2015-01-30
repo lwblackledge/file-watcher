@@ -21,7 +21,7 @@ class FileWatcher
 
     @subscriptions.add @editor.onDidConflict =>
       log 'Conflict: ' + @editor.getPath()
-      @confirmReload if @shouldPromptToReload
+      @confirmReload() if @shouldPromptToReload()
 
   shouldPromptToReload: ->
     return @showPrompt and @editor.getBuffer().isInConflict()
