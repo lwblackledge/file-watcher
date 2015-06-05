@@ -29,9 +29,10 @@ describe "FileWatcher", ->
 
   it 'should not prompt when there is a conflict and the user has disabled prompts', ->
     editor = atom.workspace.getActiveTextEditor()
+    atom.config.set('file-watcher.promptWhenFileHasChangedOnDisk', false)
     editor.buffer.conflict = true
     expect(editor.fileWatcher).toBeTruthy()
-    expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
+    expect(editor.fileWatcher.shouldPromptToReload()).toBeFalsy()
 
   it 'should reload if the user selects reload', ->
     editor = atom.workspace.getActiveTextEditor()
@@ -39,24 +40,31 @@ describe "FileWatcher", ->
     spyOn(atom, 'confirm').andReturn(0)
     spyOn(editor.buffer, 'reload')
 
-    editor.moveToEndOfLine()
-    editor.insertText('test')
-    fs.appendFileSync(testFile, 'more text')
+    editor.buffer.conflict = true
 
     expect(editor.fileWatcher).toBeTruthy()
     expect(editor.buffer.reload).toHaveBeenCalled()
 
     fs.writeFile(testFile, initialFileContents)
 
-  it 'should not reload if the user selects ignore', ->
+  it 'should open a second buffer if the user selects compare', ->
     editor = atom.workspace.getActiveTextEditor()
 
     spyOn(atom, 'confirm').andReturn(1)
+    spyOn(atom.workspace, 'open')
+
+    editor.buffer.conflict = true
+
+    expect(editor.fileWatcher).toBeTruthy()
+    expect(atom.workspace.open).toHaveBeenCalled()
+
+  it 'should not reload if the user selects ignore', ->
+    editor = atom.workspace.getActiveTextEditor()
+
+    spyOn(atom, 'confirm').andReturn(2)
     spyOn(editor.buffer, 'reload')
 
-    editor.moveToEndOfLine()
-    editor.insertText('test')
-    fs.appendFileSync(testFile, 'more text')
+    editor.buffer.conflict = true
 
     expect(editor.fileWatcher).toBeTruthy()
     expect(editor.buffer.reload).not.toHaveBeenCalled()

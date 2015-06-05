@@ -1,3 +1,4 @@
+fs = require 'fs'
 path = require 'path'
 {CompositeDisposable, Emitter} = require 'atom'
 {log, warn} = require './utils'
@@ -27,13 +28,24 @@ class FileWatcher
     return @showPrompt and @editor.getBuffer().isInConflict()
 
   confirmReload: ->
+    currPath = @editor.getPath()
+    currEncoding = @editor.getBuffer()?.encoding || 'utf8'
+
     choice = atom.confirm
-      message: path.basename(@editor.getPath()) + ' has changed on disk.'
-      buttons: ['Reload', 'Ignore']
+      message: path.basename(currPath) + ' has changed on disk.'
+      buttons: ['Reload', 'Compare', 'Ignore']
 
-    return if choice is 1
+    return if choice is 2
 
-    @editor.getBuffer()?.reload()
+    if choice is 0
+      @editor.getBuffer()?.reload()
+      return
+
+    compPromise = atom.workspace.open null,
+      split: 'right'
+
+    compPromise.then (ed) ->
+      ed.insertText fs.readFileSync(currPath, encoding: currEncoding)
 
   destroy: ->
     @subscriptions.dispose()
