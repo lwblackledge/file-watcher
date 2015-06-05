@@ -30,6 +30,7 @@ class FileWatcher
   confirmReload: ->
     currPath = @editor.getPath()
     currEncoding = @editor.getBuffer()?.encoding || 'utf8'
+    currGrammar = @editor.getGrammar()
 
     choice = atom.confirm
       message: path.basename(currPath) + ' has changed on disk.'
@@ -46,6 +47,7 @@ class FileWatcher
 
     compPromise.then (ed) ->
       ed.insertText fs.readFileSync(currPath, encoding: currEncoding)
+      ed.setGrammar currGrammar
 
   destroy: ->
     @subscriptions.dispose()
