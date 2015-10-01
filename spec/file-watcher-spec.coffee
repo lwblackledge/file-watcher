@@ -19,20 +19,24 @@ describe "FileWatcher", ->
     editor = atom.workspace.getActiveTextEditor()
     expect(editor.getPath()).toContain 'testFile.md'
     expect(editor.fileWatcher).toBeTruthy()
-    expect(editor.fileWatcher.shouldPromptToReload()).toBeFalsy()
+    expect(editor.fileWatcher.isBufferInConflict()).toBeFalsy()
 
   it 'should prompt when there is a conflict', ->
     editor = atom.workspace.getActiveTextEditor()
     editor.buffer.conflict = true
     expect(editor.fileWatcher).toBeTruthy()
-    expect(editor.fileWatcher.shouldPromptToReload()).toBeTruthy()
+    expect(editor.fileWatcher.isBufferInConflict()).toBeTruthy()
 
-  it 'should not prompt when there is a conflict and the user has disabled prompts', ->
+  it 'should prompt when there is a change and the user has enabled change prompt', ->
     editor = atom.workspace.getActiveTextEditor()
-    atom.config.set('file-watcher.promptWhenFileHasChangedOnDisk', false)
-    editor.buffer.conflict = true
+    atom.config.set('file-watcher.promptWhenChange', true)
+
+    spyOn(editor.fileWatcher, 'confirmReload')
+
+    editor.buffer.file.emitter.emit 'did-change'
+
     expect(editor.fileWatcher).toBeTruthy()
-    expect(editor.fileWatcher.shouldPromptToReload()).toBeFalsy()
+    expect(editor.fileWatcher.confirmReload).toHaveBeenCalled()
 
   it 'should reload if the user selects reload', ->
     editor = atom.workspace.getActiveTextEditor()

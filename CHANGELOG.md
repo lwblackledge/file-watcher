@@ -1,3 +1,6 @@
+## 0.4.0 - Add Prompt on Change
+* Allow users to also show the prompt when the file changes, even if there are no unsaved changes in Atom
+
 ## 0.3.1 - Add Compare Grammar support
 * Add grammar settings to the new buffer
   * credit to [@kankaristo](https://github.com/lwblackledge/file-watcher/issues/1#issuecomment-109119005) for change

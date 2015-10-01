@@ -5,9 +5,20 @@ FileWatcher = require './file-watcher'
 class FileWatcherInitializer
 
   config:
-    promptWhenFileHasChangedOnDisk:
+    promptWhenChange:
+      type: 'boolean'
+      default: false
+      title: 'Prompt on Change'
+      description: 'Also prompt to reload or ignore if the file on disk changes and there are no unsaved changes in Atom'
+    includeCompareOption:
       type: 'boolean'
       default: true
+      title: 'Include the Compare option'
+      description: 'Opens the file on disk as a new editor for comparisons'
+    logDebugMessages:
+      type: 'boolean'
+      default: false
+      title: 'Log debug messages in the console'
 
   activate: ->
     @subscriptions = new CompositeDisposable

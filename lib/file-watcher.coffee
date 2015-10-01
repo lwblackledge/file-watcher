@@ -14,29 +14,60 @@ class FileWatcher
       warn 'No editor instance on this editor'
       return
 
-    @subscriptions.add atom.config.observe 'file-watcher.promptWhenFileHasChangedOnDisk',
-      (promptWhenFileHasChangedOnDisk) => @showPrompt = promptWhenFileHasChangedOnDisk
+    hasUnderlyingFile = @editor.getBuffer()?.file?
+
+    @subscriptions.add atom.config.observe 'file-watcher.promptWhenChange',
+      (prompt) => @showChangePrompt = prompt
+
+    @subscriptions.add atom.config.observe 'file-watcher.includeCompareOption',
+      (compare) => @includeCompareOption = compare
+
+    @subscriptions.add atom.config.observe 'file-watcher.logDebugMessages',
+      (debug) => @debug = debug
+
+    @subscribeToFileChange() if hasUnderlyingFile
+
+    @subscriptions.add @editor.onDidConflict =>
+      @conflictInterceptor()
+
+    @subscriptions.add @editor.onDidSave =>
+      if !hasUnderlyingFile
+        hasUnderlyingFile = true
+        @subscribeToFileChange()
 
     @subscriptions.add @editor.onDidDestroy =>
       @destroy()
 
-    @subscriptions.add @editor.onDidConflict =>
-      log 'Conflict: ' + @editor.getPath()
-      @confirmReload() if @shouldPromptToReload()
+  subscribeToFileChange: ->
+    @subscriptions.add @editor.getBuffer()?.file.onDidChange =>
+      @changeInterceptor()
 
-  shouldPromptToReload: ->
-    return @showPrompt and @editor.getBuffer().isInConflict()
+    # call this to reset order of events, otherwise buffer fires first
+    @editor.getBuffer()?.subscribeToFile()
+
+  isBufferInConflict: ->
+    return @editor.getBuffer()?.isInConflict()
+
+  changeInterceptor: ->
+    (log 'Change: ' + @editor.getPath()) if @debug
+    @editor.getBuffer()?.conflict = true if @showChangePrompt
+
+  conflictInterceptor: ->
+    (log 'Conflict: ' + @editor.getPath()) if @debug
+    @confirmReload() if @isBufferInConflict()
 
   confirmReload: ->
     currPath = @editor.getPath()
-    currEncoding = @editor.getBuffer()?.encoding || 'utf8'
+    currEncoding = @editor.getBuffer()?.getEncoding() || 'utf8'
     currGrammar = @editor.getGrammar()
 
     choice = atom.confirm
-      message: path.basename(currPath) + ' has changed on disk.'
-      buttons: ['Reload', 'Compare', 'Ignore']
+      message: 'The file "' + path.basename(currPath) + '" has changed.'
+      buttons: if @includeCompareOption then ['Reload', 'Ignore', 'Compare'] else ['Reload', 'Ignore']
 
-    return if choice is 2
+    if choice is 1
+      @editor.getBuffer()?.emitModifiedStatusChanged(true)
+      return
 
     if choice is 0
       @editor.getBuffer()?.reload()
