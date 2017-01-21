@@ -36,7 +36,7 @@ class FileWatcherInitializer
         @watchers.splice(@watchers.indexOf(fileWatcher), 1)
 
   deactivate: ->
-    fileWatcher.destroy() for fileWatcher in @watchers
+    fileWatcher?.destroy() for fileWatcher in @watchers
     @subscriptions.dispose()
 
 module.exports = new FileWatcherInitializer()
