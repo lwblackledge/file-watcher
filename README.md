@@ -16,6 +16,10 @@ Or find the package in the Atom registry and install.
 
 ## Settings
 
+#### AutoReload
+
+Reload without a prompt. Warning: Overrides "Prompt on Change" and "Include the Compare option", and may cause a loss of work!
+
 #### Include the Compare option
 
 Enable this setting to add the Compare option to the Reload/Ignore prompt, which will open the file in a new editor so you can see the on-disk changes.
@@ -25,6 +29,14 @@ Enabled by default.
 
 Enable this setting to also show the Reload/Ignore prompt when the file changes on disk, even if there are no unsaved changes in Atom
 
+#### Post-Compare Command
+
+Define an Atom command to run after the compare is shown e.g. split-diff:toggle
+
+#### Use WatchFile
+
+Mounted file systems don't support `inotify` and Atom cannot tell when they change. This option adds polling and should only be enabled if you are using a mounted file system like Samba or SSHFS. There may be a slight delay as it polls every 5 seconds.
+
 ## License
 
-MIT License -- Copyright (c) 2015 Laurence Blackledge
+MIT License -- Copyright (c) 2015-2017 Laurence Blackledge
