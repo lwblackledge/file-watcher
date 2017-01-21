@@ -19,7 +19,7 @@ class FileWatcher
     savedByAtom = false
 
     @subscriptions.add atom.config.observe 'file-watcher.autoReload',
-      (autoRelaod) => @autoReload = autoReload
+      (autoReload) => @autoReload = autoReload
 
     @subscriptions.add atom.config.observe 'file-watcher.promptWhenChange',
       (prompt) => @showChangePrompt = prompt
