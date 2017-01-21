@@ -5,6 +5,11 @@ FileWatcher = require './file-watcher'
 class FileWatcherInitializer
 
   config:
+    autoReload:
+      type: 'boolean'
+      default: false
+      title: 'Reload Automatically'
+      description: 'Reload without a prompt. Warning: Overrides "Prompt on Change" and "Include the Compare option", and may cause a loss of work!'
     promptWhenChange:
       type: 'boolean'
       default: false
@@ -15,6 +20,16 @@ class FileWatcherInitializer
       default: true
       title: 'Include the Compare option'
       description: 'Opens the file on disk as a new editor for comparisons'
+    useFsWatchFile:
+      type: 'boolean'
+      default: false
+      title: 'Use WatchFile -- RELOAD REQUIRED'
+      description: 'This is less efficient and should only be used for mounted files systems e.g. SSHFS'
+    postCompareCommand:
+      type: 'string'
+      default: ''
+      title: 'Post-Compare command'
+      description: 'Command to run after the compare is shown e.g. split-diff:toggle'
     logDebugMessages:
       type: 'boolean'
       default: false

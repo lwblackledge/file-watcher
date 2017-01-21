@@ -15,12 +15,23 @@ class FileWatcher
       return
 
     hasUnderlyingFile = @editor.getBuffer()?.file?
+    currPath = @editor.getPath()
+    savedByAtom = false
+
+    @subscriptions.add atom.config.observe 'file-watcher.autoReload',
+      (autoRelaod) => @autoReload = autoReload
 
     @subscriptions.add atom.config.observe 'file-watcher.promptWhenChange',
       (prompt) => @showChangePrompt = prompt
 
     @subscriptions.add atom.config.observe 'file-watcher.includeCompareOption',
       (compare) => @includeCompareOption = compare
+
+    @subscriptions.add atom.config.observe 'file-watcher.useFsWatchFile',
+      (useFsWatchFile) => @useFsWatchFile = useFsWatchFile
+
+    @subscriptions.add atom.config.observe 'file-watcher.postCompareCommand',
+      (command) => @postCompareCommand = command
 
     @subscriptions.add atom.config.observe 'file-watcher.logDebugMessages',
       (debug) => @debug = debug
@@ -31,6 +42,8 @@ class FileWatcher
       @conflictInterceptor()
 
     @subscriptions.add @editor.onDidSave =>
+      # avoid change firing when Atom saves the file
+      @ignoreChange = true
       if !hasUnderlyingFile
         hasUnderlyingFile = true
         @subscribeToFileChange()
@@ -39,6 +52,16 @@ class FileWatcher
       @destroy()
 
   subscribeToFileChange: ->
+    @currPath = @editor.getPath()
+
+    if @useFsWatchFile
+      # try to use watchFile to handle changes on file systems that don't support inotify
+      # remove existing watch first
+      fs.unwatchFile @currPath
+      fs.watchFile @currPath, (curr, prev) =>
+        @confirmReload() if @showChangePrompt and not @ignoreChange and curr.mtime.getTime() > prev.mtime.getTime()
+        @ignoreChange = false if @ignoreChange
+
     @subscriptions.add @editor.getBuffer()?.file.onDidChange =>
       @changeInterceptor()
 
@@ -52,17 +75,28 @@ class FileWatcher
     (log 'Change: ' + @editor.getPath()) if @debug
     @editor.getBuffer()?.conflict = true if @showChangePrompt
 
+    # ignore if handled by the non-mounted file system
+    @ignoreChange = true if @useFsWatchFile and @showChangePrompt
+
   conflictInterceptor: ->
     (log 'Conflict: ' + @editor.getPath()) if @debug
     @confirmReload() if @isBufferInConflict()
 
+  forceReload: ->
+    if @useFsWatchFile
+      # force a re-read from the file then reload
+      @editor.buffer.updateCachedDiskContents true, => @editor.getBuffer()?.reload()
+    else
+      @editor.getBuffer()?.reload()
+
   confirmReload: ->
-    currPath = @editor.getPath()
-    currEncoding = @editor.getBuffer()?.getEncoding() || 'utf8'
-    currGrammar = @editor.getGrammar()
+    # if the user has selected autoReload we can just reload and exit
+    if @autoReload
+      @forceReload()
+      return
 
     choice = atom.confirm
-      message: 'The file "' + path.basename(currPath) + '" has changed.'
+      message: 'The file "' + path.basename(@currPath) + '" has changed.'
       buttons: if @includeCompareOption then ['Reload', 'Ignore', 'Compare'] else ['Reload', 'Ignore']
 
     if choice is 1
@@ -70,18 +104,28 @@ class FileWatcher
       return
 
     if choice is 0
-      @editor.getBuffer()?.reload()
+      @forceReload()
       return
+
+    scopePath = @editor.getPath()
+    scopePostCompare = @postCompareCommand
+    
+    currEncoding = @editor.getBuffer()?.getEncoding() || 'utf8'
+    currGrammar = @editor.getGrammar()
+    currView = atom.views.getView(@editor)
 
     compPromise = atom.workspace.open null,
       split: 'right'
 
     compPromise.then (ed) ->
-      ed.insertText fs.readFileSync(currPath, encoding: currEncoding)
+      # @currPath is lost so use path from closure
+      ed.insertText fs.readFileSync(scopePath, encoding: currEncoding)
       ed.setGrammar currGrammar
+      atom.commands.dispatch(currView, scopePostCompare) if scopePostCompare
 
   destroy: ->
     @subscriptions.dispose()
+    (fs.unwatchFile @currPath) if @hasUnderlyingFile
     @emitter.emit 'did-destroy'
 
   onDidDestroy: (callback) ->

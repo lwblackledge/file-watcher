@@ -1,3 +1,9 @@
+## 1.0.0 - Mounted File Systems
+* Add an option to use polling on mounted file systems (experimental!)
+* Add a post-compare command to trigger another package after the compare is opened (e.g. split-diff)
+* Add an option to auto-reload - use at your own risk!
+* Bug fixes
+
 ## 0.4.0 - Add Prompt on Change
 * Allow users to also show the prompt when the file changes, even if there are no unsaved changes in Atom
 
