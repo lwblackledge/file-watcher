@@ -109,7 +109,7 @@ class FileWatcher
 
     scopePath = @editor.getPath()
     scopePostCompare = @postCompareCommand
-    
+
     currEncoding = @editor.getBuffer()?.getEncoding() || 'utf8'
     currGrammar = @editor.getGrammar()
     currView = atom.views.getView(@editor)
@@ -125,7 +125,7 @@ class FileWatcher
 
   destroy: ->
     @subscriptions.dispose()
-    (fs.unwatchFile @currPath) if @hasUnderlyingFile
+    (fs.unwatchFile @currPath) if @useFsWatchFile or @hasUnderlyingFile
     @emitter.emit 'did-destroy'
 
   onDidDestroy: (callback) ->
