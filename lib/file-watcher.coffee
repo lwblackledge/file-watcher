@@ -14,8 +14,8 @@ class FileWatcher
       warn 'No editor instance on this editor'
       return
 
-    hasUnderlyingFile = @editor.getBuffer()?.file?
-    currPath = @editor.getPath()
+    @hasUnderlyingFile = @editor.getBuffer()?.file?
+    @currPath = @editor.getPath()
     savedByAtom = false
 
     @subscriptions.add atom.config.observe 'file-watcher.autoReload',
@@ -36,7 +36,7 @@ class FileWatcher
     @subscriptions.add atom.config.observe 'file-watcher.logDebugMessages',
       (debug) => @debug = debug
 
-    @subscribeToFileChange() if hasUnderlyingFile
+    @subscribeToFileChange() if @hasUnderlyingFile
 
     @subscriptions.add @editor.onDidConflict =>
       @conflictInterceptor()
@@ -44,8 +44,8 @@ class FileWatcher
     @subscriptions.add @editor.onDidSave =>
       # avoid change firing when Atom saves the file
       @ignoreChange = true
-      if !hasUnderlyingFile
-        hasUnderlyingFile = true
+      if !@hasUnderlyingFile
+        @hasUnderlyingFile = true
         @subscribeToFileChange()
 
     @subscriptions.add @editor.onDidDestroy =>
@@ -97,16 +97,21 @@ class FileWatcher
 
     choice = atom.confirm
       message: 'The file "' + path.basename(@currPath) + '" has changed.'
-      buttons: if @includeCompareOption then ['Reload', 'Ignore', 'Compare'] else ['Reload', 'Ignore']
+      buttons: if @includeCompareOption then ['Reload', 'Ignore', 'Ignore All', 'Compare'] else ['Reload', 'Ignore', 'Ignore All']
 
-    if choice is 1
-      @editor.getBuffer()?.emitModifiedStatusChanged(true)
-      return
-
-    if choice is 0
+    if choice is 0 # Reload
       @forceReload()
       return
 
+    if choice is 1 #Ignore
+      @editor.getBuffer()?.emitModifiedStatusChanged(true)
+      return
+
+    if choice is 2 # Ignore All
+      @destroy()
+      return
+
+    # Compare
     scopePath = @editor.getPath()
     scopePostCompare = @postCompareCommand
 
@@ -125,7 +130,7 @@ class FileWatcher
 
   destroy: ->
     @subscriptions.dispose()
-    (fs.unwatchFile @currPath) if @useFsWatchFile or @hasUnderlyingFile
+    (fs.unwatchFile @currPath) if @currPath and @hasUnderlyingFile
     @emitter.emit 'did-destroy'
 
   onDidDestroy: (callback) ->

@@ -1,3 +1,7 @@
+## 1.1.0 - Adding Ignore All
+* Add an option to ignore all future changes on a file (during the session)
+* Bug fixes
+
 ## 1.0.0 - Mounted File Systems
 * Add an option to use polling on mounted file systems (experimental!)
 * Add a post-compare command to trigger another package after the compare is opened (e.g. split-diff)

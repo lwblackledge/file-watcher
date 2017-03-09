@@ -6,6 +6,8 @@ You can turn the prompts for changes on and off in the package settings.
 
 There is also a prompt option to open the original file in a new Atom window so that you can compare your current version with the disk version.
 
+If you are looking at a file that has frequent changes you can also choose to 'Ignore All' changes, which will stop any future alerts until you reload the entire Atom window.
+
 ## Installation
 Either use `apm`:
 ```
