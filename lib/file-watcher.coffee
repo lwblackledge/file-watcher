@@ -83,11 +83,13 @@ class FileWatcher
     @confirmReload() if @isBufferInConflict()
 
   forceReload: ->
-    if @useFsWatchFile
+    currBuffer = @editor.getBuffer()
+    # patch - new version of Atom removed updateCachedDiskContents() from buffer
+    if @useFsWatchFile and currBuffer and currBuffer.updateCachedDiskContents !== undefined
       # force a re-read from the file then reload
-      @editor.buffer.updateCachedDiskContents true, => @editor.getBuffer()?.reload()
+      currBuffer.updateCachedDiskContents true, => currBuffer?.reload()
     else
-      @editor.getBuffer()?.reload()
+      currBuffer?.reload()
 
   confirmReload: ->
     # if the user has selected autoReload we can just reload and exit
