@@ -29,7 +29,7 @@ Enabled by default.
 
 #### Prompt on Change
 
-Enable this setting to also show the Reload/Ignore prompt when the file changes on disk, even if there are no unsaved changes in Atom
+Enable this setting to also show the Reload/Ignore prompt when the file changes on disk, even if there are no unsaved changes in Atom.
 
 #### Post-Compare Command
 
@@ -37,8 +37,8 @@ Define an Atom command to run after the compare is shown e.g. split-diff:toggle
 
 #### Use WatchFile
 
-Mounted file systems don't support `inotify` and Atom cannot tell when they change. This option adds polling and should only be enabled if you are using a mounted file system like Samba or SSHFS. There may be a slight delay as it polls every 5 seconds.
+Some file systems like SSHFS or FTP don't support `inotify` and Atom cannot tell when they change. This option adds polling and should only be enabled if you are using a file system like SSHFS or FTP. There may be a slight delay as it polls every 5 seconds, and some reloads can be delayed due to network latency.
 
 ## License
 
-MIT License -- Copyright (c) 2015-2017 Laurence Blackledge
+MIT License -- Copyright (c) 2015-2018 Laurence Blackledge

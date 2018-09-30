@@ -1,3 +1,9 @@
+## 2.0.0 - Atom Compatibility Update
+* Switching to ES6
+* Rewriting to accommodate changes in `atom/text-buffer`
+* Additional clarity on the WatchFile documentation (#35)
+* Bug fixes
+
 ## 1.1.0 - Adding Ignore All
 * Add an option to ignore all future changes on a file (during the session)
 * Bug fixes
