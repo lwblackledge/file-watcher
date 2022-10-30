@@ -1,3 +1,7 @@
+---
+This project is no longer maintained as I moved on from Atom.
+---
+
 # Atom file-watcher Package
 
 This package watches open files for conflicts or changes, then uses the Atom confirm feature to prompt to reload each file.
